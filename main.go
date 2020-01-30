@@ -118,13 +118,12 @@ func runESQuery(query string, index string, maltegoEntitys []queryTransform) *ga
 
 	// Check to see if ElasticSearch URL is set
 	if esURL == "" {
-
 		if *urlFlag != "" {
 			esURL = *urlFlag
-
 		} else {
 			log.Fatal("Please set ES_URL environment variable")
 		}
+	}
 
 		jsonResults.Array("data")
 		// ElasticSearch client initialization
@@ -185,7 +184,7 @@ func runESQuery(query string, index string, maltegoEntitys []queryTransform) *ga
 		// Query Client Finalized
 		maltegoMessage := strings.Replace(maltegoMessageTemplate, "MALTEGO_ENTITY", maltegoEntities, -1)
 		fmt.Println(maltegoMessage)
-	}
+	
 	return jsonResults
 }
 
