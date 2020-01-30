@@ -1,18 +1,20 @@
 # ElasticMaltego
 Create Maltego Transforms from ElasticSearch queries
 
-#Why 
+# Why 
 
 Maltego has a huge number of really useful transforms for working with OSINT data, however there is not much in the way of transform for
 PSINT data (housed with the  SIEM). The purpose of this project is to provide an easy process by which data housed in ElasticSearch databases
 can be aggregated and delivered to Maltego as a set of entities.
 
-#How
+# How
 
 This tool is able to either output maltego entities directly using a query, or produce a Maltego transform mtz export for inclusion in your 
 Maltego UI.
 
-#Usage 
+# Usage 
+
+`./ElasticMaltego -h`
 
 ```
 Usage of ./ElasticMaltego:
@@ -35,8 +37,10 @@ Usage of ./ElasticMaltego:
 ```
 
 ## Transform package output
+`./ElasticMaltego -m gateway-api -field data.ip -m maltego.IPV4Address   `
+
 ```
- ./ElasticMaltego -m gateway-api -field data.ip -m maltego.IPV4Address                                                                                                                                                                      master * ] 6:59 PM ./ElasticMaltego
+                                                                                                                                       
 
 <TransformSettings enabled="true" disclaimerAccepted="false" showHelp="true" runWithAll="true" favorite="true">
    <Properties>
