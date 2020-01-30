@@ -66,6 +66,7 @@ func createMaltegoTransform(maltegoSourceEntity string) {
 	var transformGroup = "sirt"
 	transformDisplayName := strings.Split(*indexFlag, "-")[0]
 	transformDisplayName = transformDisplayName + "-" + "By" + strings.Split(maltegoSourceEntity, ".")[1]
+	transformName := transformGroup + "." + transformDisplayName
 	transformXML := `
 	<MaltegoTransform name="TRANSFORM_GROUP.TRANSFORM_DISPLAY_NAME" displayName="TRANSFORM_DISPLAY_NAME" abstract="false" template="false" visibility="public" description="Generated using magic" author="Louis Barrett" requireDisplayInfo="false">
    <TransformAdapter>com.paterva.maltego.transform.protocol.v2api.LocalTransformAdapterV2</TransformAdapter>
@@ -106,11 +107,50 @@ func createMaltegoTransform(maltegoSourceEntity string) {
    </Properties>
 </TransformSettings>
 `
+
 	transformSettings = strings.ReplaceAll(transformSettings, "TRANSFORM_APP_PATH", transformAppPath)
 	transformSettings = strings.ReplaceAll(transformSettings, "ES_FLAG", esURL)
 	transformSettings = strings.ReplaceAll(transformSettings, "INDEX_FLAG", *indexFlag)
 	transformSettings = strings.ReplaceAll(transformSettings, "FIELD_FLAG", *queryFieldFlag)
-	fmt.Println(transformSettings, transformXML)
+
+	localTAS := `
+	<MaltegoServer name="Local" enabled="true" description="Local transforms hosted on this machine" url="http://localhost">
+	   <LastSync>2020-01-29 14:21:09.761 PST</LastSync>
+	   <Protocol version="0.0"/>
+	   <Authentication type="none"/>
+	   <Transforms> 
+		  <Transform name="TRANSFORM_DISPLAY_NAME"/>
+	   </Transforms>
+	   <Seeds/>
+	</MaltegoServer>`
+	localTAS = strings.ReplaceAll(localTAS, "TRANSFORM_DISPLAY_NAME", transformName)
+	fmt.Println(transformSettings, transformXML, localTAS)
+
+	// Define temporary path and Maltego zip Folder name
+	maltegoTransformBasepath := "/tmp/SirtMaltego/"
+	maltegoTransformLocal := maltegoTransformBasepath + "TransformRepositories/Local/"
+	maltegoLocalServers := maltegoTransformBasepath + "/Servers/"
+	OK := os.MkdirAll(maltegoTransformLocal, os.ModePerm)
+	// Create teh folder for Local.tas
+	OK = os.MkdirAll(maltegoLocalServers, os.ModePerm)
+	if OK != nil {
+		fmt.Println("An error occured", OK)
+	}
+
+	// Create .transform file from bytes
+	transformFile, err := os.Create(maltegoTransformLocal + transformName + ".transform")
+	// Create .transformSettings file from bytes
+	transformSettingsFile, err := os.Create(maltegoTransformLocal + transformName + ".transformsettings")
+	if err != nil {
+		log.Fatal("File creation failed", err)
+	}
+	TASFile, err := os.Create(maltegoLocalServers + "local.tas")
+
+	transformFile.Write([]byte(transformXML))
+	transformSettingsFile.Write([]byte(transformSettings))
+	TASFile.Write([]byte(localTAS))
+	// Write ZIP files to ..\TransformRepositories\Local\<displayName>.
+
 }
 
 func runESQuery(query string, index string, maltegoEntitys []queryTransform) *gabs.Container {
@@ -125,66 +165,66 @@ func runESQuery(query string, index string, maltegoEntitys []queryTransform) *ga
 		}
 	}
 
-		jsonResults.Array("data")
-		// ElasticSearch client initialization
-		creds := credentials.NewEnvCredentials()
-		signer := v4.NewSigner(creds)
-		awsClient, err := aws_signing_client.New(signer, nil, "es", "us-west-2")
-		if err != nil {
-			fmt.Println("Unable to create AWS client", err)
+	jsonResults.Array("data")
+	// ElasticSearch client initialization
+	creds := credentials.NewEnvCredentials()
+	signer := v4.NewSigner(creds)
+	awsClient, err := aws_signing_client.New(signer, nil, "es", "us-west-2")
+	if err != nil {
+		fmt.Println("Unable to create AWS client", err)
+	}
+
+	// Parse Query input
+	QueryInput := elastic.NewQueryStringQuery(query)
+
+	// Query Client creation
+	esc, err := elastic.NewClient(elastic.SetURL(esURL), elastic.SetScheme("https"), elastic.SetHttpClient(awsClient), elastic.SetSniff(false), elastic.SetHealthcheck(false))
+	if err != nil {
+		log.Fatal("ES client creation failed")
+	}
+	Client := esc.Search().Index(index).Size(*limitFlag)
+
+	// Parse Aggregations
+	transformAggregation := elastic.NewFilterAggregation().Filter(QueryInput)
+	for _, entityTransform := range maltegoEntitys {
+		if *debugFlag {
+			fmt.Println(entityTransform.field, "-->", entityTransform.maltegoType)
 		}
+		// Create aggregation filter from query input
+		transformAggregation = transformAggregation.SubAggregation(entityTransform.maltegoType, elastic.NewTermsAggregation().Field(entityTransform.field).MinDocCount(0).Size(2000))
 
-		// Parse Query input
-		QueryInput := elastic.NewQueryStringQuery(query)
-
-		// Query Client creation
-		esc, err := elastic.NewClient(elastic.SetURL(esURL), elastic.SetScheme("https"), elastic.SetHttpClient(awsClient), elastic.SetSniff(false), elastic.SetHealthcheck(false))
-		if err != nil {
-			log.Fatal("ES client creation failed")
+		Client = esc.Search().Index(index).Size(*limitFlag).Aggregation("top", transformAggregation).Size(1)
+		if *debugFlag {
+			fmt.Println(transformAggregation.Source())
 		}
-		Client := esc.Search().Index(index).Size(*limitFlag)
+		Results, err := Client.Do(context.Background())
+		if err != nil {
+			log.Fatal("ES Query failed ", err)
+		} else {
+			// Process the query aggs
 
-		// Parse Aggregations
-		transformAggregation := elastic.NewFilterAggregation().Filter(QueryInput)
-		for _, entityTransform := range maltegoEntitys {
-			if *debugFlag {
-				fmt.Println(entityTransform.field, "-->", entityTransform.maltegoType)
+			data, ok := Results.Aggregations.Filters("top")
+			groupedResults, ok := data.Aggregations.Terms(entityTransform.maltegoType)
+			if !ok {
+				log.Fatal("Error Retrieving results ", err)
 			}
-			// Create aggregation filter from query input
-			transformAggregation = transformAggregation.SubAggregation(entityTransform.maltegoType, elastic.NewTermsAggregation().Field(entityTransform.field).MinDocCount(0).Size(2000))
-
-			Client = esc.Search().Index(index).Size(*limitFlag).Aggregation("top", transformAggregation).Size(1)
-			if *debugFlag {
-				fmt.Println(transformAggregation.Source())
-			}
-			Results, err := Client.Do(context.Background())
-			if err != nil {
-				log.Fatal("ES Query failed ", err)
-			} else {
-				// Process the query aggs
-
-				data, ok := Results.Aggregations.Filters("top")
-				groupedResults, ok := data.Aggregations.Terms(entityTransform.maltegoType)
-				if !ok {
-					log.Fatal("Error Retrieving results ", err)
-				}
-				for _, k := range groupedResults.Buckets {
-					if k.DocCount > 0 {
-						entityObject := strings.Replace(entityTemplate, "TYPE", entityTransform.maltegoType, 1)
-						entityObject = strings.Replace(entityObject, "DATA", k.Key.(string), 1)
-						maltegoEntities = maltegoEntities + entityObject
-
-					}
+			for _, k := range groupedResults.Buckets {
+				if k.DocCount > 0 {
+					entityObject := strings.Replace(entityTemplate, "TYPE", entityTransform.maltegoType, 1)
+					entityObject = strings.Replace(entityObject, "DATA", k.Key.(string), 1)
+					maltegoEntities = maltegoEntities + entityObject
 
 				}
 
 			}
-		}
 
-		// Query Client Finalized
-		maltegoMessage := strings.Replace(maltegoMessageTemplate, "MALTEGO_ENTITY", maltegoEntities, -1)
-		fmt.Println(maltegoMessage)
-	
+		}
+	}
+
+	// Query Client Finalized
+	maltegoMessage := strings.Replace(maltegoMessageTemplate, "MALTEGO_ENTITY", maltegoEntities, -1)
+	fmt.Println(maltegoMessage)
+
 	return jsonResults
 }
 
@@ -210,8 +250,9 @@ func main() {
 		GroupByUserID := queryTransform{field: "data.viewer.userId.keyword", maltegoType: "segment.UserId", limit: 1000}
 		GroupByUserEmail := queryTransform{field: "data.viewer.userEmail.keyword", maltegoType: "maltego.EmailAddress", limit: 1000}
 		GroupByUserWorkspaceID := queryTransform{field: "data.viewer.userName.keyword", maltegoType: "maltego.Person", limit: 1000}
+		GroupByUserAgent := queryTransform{field: "data.userAgent.keyword", maltegoType: "maltego.Phrase", limit: 1000}
 
-		maltegoTransforms := []queryTransform{GroupByUserEmail, GroupByUserID, GroupByUserWorkspaceID}
+		maltegoTransforms := []queryTransform{GroupByUserEmail, GroupByUserID, GroupByUserWorkspaceID, GroupByUserAgent}
 		runESQuery(string(*queryFieldFlag)+"\""+string(*queryFlag)+"\"", *indexFlag, maltegoTransforms)
 	}
 }
