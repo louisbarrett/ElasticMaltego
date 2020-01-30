@@ -4,6 +4,8 @@ go 1.13
 
 require (
 	github.com/Jeffail/gabs v1.4.0
+	github.com/ahmetb/go-linq v3.0.0+incompatible
+	github.com/ahmetb/go-linq/v3 v3.1.0
 	github.com/aws/aws-sdk-go v1.28.8
 	github.com/mailru/easyjson v0.7.0 // indirect
 	github.com/olivere/elastic v6.2.27+incompatible
