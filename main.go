@@ -43,7 +43,8 @@ var (
 	</MaltegoTransformResponseMessage>
 	</MaltegoMessage>
 	`
-	maltegoEntities string
+	maltegoEntities   string
+	transformNameBlob string
 )
 
 type queryTransform struct {
@@ -52,7 +53,8 @@ type queryTransform struct {
 	limit       int
 }
 
-func createMaltegoTransform(maltegoSourceEntity string) {
+func createMaltegoTransform(maltegoSourceEntities string) {
+	``
 	// TRANSFORM_APP_PATH
 	// MALTEGO_SOURCE_ENTITY
 	// FIELD_FLAG
@@ -61,13 +63,33 @@ func createMaltegoTransform(maltegoSourceEntity string) {
 	// TRANSFORM_GROUP
 	// TRANSFORM_DISPLAY_NAME
 
-	transformAppPath := os.Args[0]
-	fmt.Println(transformAppPath)
-	var transformGroup = "sirt"
-	transformDisplayName := strings.Split(*indexFlag, "-")[0]
-	transformDisplayName = transformDisplayName + "-" + "By" + strings.Split(maltegoSourceEntity, ".")[1]
-	transformName := transformGroup + "." + transformDisplayName
-	transformXML := `
+	// Validate maltego statements
+	// maltegoTemporary := (strings.Split(maltegoSourceEntities, ","))
+
+	// Create Maltego folder structure
+
+	// Define temporary path and Maltego zip Folder name
+	maltegoTransformBasepath := "/tmp/SirtMaltego/"
+	maltegoTransformLocal := maltegoTransformBasepath + "TransformRepositories/Local/"
+	// Generate TAS file including all transforms
+	maltegoLocalServers := maltegoTransformBasepath + "/Servers/"
+
+	OK := os.MkdirAll(maltegoTransformLocal, os.ModePerm)
+	// Create teh folder for Local.tas
+	OK = os.MkdirAll(maltegoLocalServers, os.ModePerm)
+	if OK != nil {
+		fmt.Println("An error occured", OK)
+	}
+
+	for _, maltegoSourceEntity := range strings.Split(maltegoSourceEntities, ",") {
+
+		transformAppPath := os.Args[0]
+		fmt.Println(transformAppPath)
+		var transformGroup = "sirt"
+		transformDisplayName := strings.Split(*indexFlag, "-")[0]
+		transformDisplayName = transformDisplayName + "-" + "By" + strings.Split(maltegoSourceEntity, ".")[1]
+		transformName := transformGroup + "." + transformDisplayName
+		transformXML := `
 	<MaltegoTransform name="TRANSFORM_GROUP.TRANSFORM_DISPLAY_NAME" displayName="TRANSFORM_DISPLAY_NAME" abstract="false" template="false" visibility="public" description="Generated using magic" author="Louis Barrett" requireDisplayInfo="false">
    <TransformAdapter>com.paterva.maltego.transform.protocol.v2api.LocalTransformAdapterV2</TransformAdapter>
    <Properties>
@@ -93,25 +115,43 @@ func createMaltegoTransform(maltegoSourceEntity string) {
    <OutputEntities/>
    <StealthLevel>0</StealthLevel>
 </MaltegoTransform>`
-	transformXML = strings.ReplaceAll(transformXML, "TRANSFORM_GROUP", transformGroup)
-	transformXML = strings.ReplaceAll(transformXML, "TRANSFORM_DISPLAY_NAME", transformDisplayName)
-	transformXML = strings.ReplaceAll(transformXML, "MALTEGO_SOURCE_ENTITY", maltegoSourceEntity)
+		transformXML = strings.ReplaceAll(transformXML, "TRANSFORM_GROUP", transformGroup)
+		transformXML = strings.ReplaceAll(transformXML, "TRANSFORM_DISPLAY_NAME", transformDisplayName)
+		transformXML = strings.ReplaceAll(transformXML, "MALTEGO_SOURCE_ENTITY", maltegoSourceEntity)
 
-	transformSettings := `
+		transformSettings := `
 <TransformSettings enabled="true" disclaimerAccepted="false" showHelp="true" runWithAll="true" favorite="true">
    <Properties>
       <Property name="transform.local.command" type="string" popup="false">/usr/local/bin/aws-okta</Property>
       <Property name="transform.local.parameters" type="string" popup="false">exec security-write  -- TRANSFORM_APP_PATH --ES ES_FLAG -index INDEX_FLAG -field FIELD_FLAG -query</Property>
       <Property name="transform.local.working-directory" type="string" popup="false">/</Property>
-      <Property name="transform.local.debug" type="boolean" popup="false">true</Property>
+      <Property name="transform.local.debug" type="boolean" popup="false">false</Property>
    </Properties>
 </TransformSettings>
 `
 
-	transformSettings = strings.ReplaceAll(transformSettings, "TRANSFORM_APP_PATH", transformAppPath)
-	transformSettings = strings.ReplaceAll(transformSettings, "ES_FLAG", esURL)
-	transformSettings = strings.ReplaceAll(transformSettings, "INDEX_FLAG", *indexFlag)
-	transformSettings = strings.ReplaceAll(transformSettings, "FIELD_FLAG", *queryFieldFlag)
+		transformSettings = strings.ReplaceAll(transformSettings, "TRANSFORM_APP_PATH", transformAppPath)
+		transformSettings = strings.ReplaceAll(transformSettings, "ES_FLAG", esURL)
+		transformSettings = strings.ReplaceAll(transformSettings, "INDEX_FLAG", *indexFlag)
+		transformSettings = strings.ReplaceAll(transformSettings, "FIELD_FLAG", *queryFieldFlag)
+
+		fmt.Println(transformSettings, transformXML)
+
+		// Create .transform file from bytes
+		transformFile, err := os.Create(maltegoTransformLocal + transformName + ".transform")
+		// Create .transformSettings file from bytes
+		transformSettingsFile, err := os.Create(maltegoTransformLocal + transformName + ".transformsettings")
+		if err != nil {
+			log.Fatal("File creation failed", err)
+		}
+
+		transformFile.Write([]byte(transformXML))
+		transformSettingsFile.Write([]byte(transformSettings))
+		// Update local.tas entry to include this transform
+		transformNameBlob = transformNameBlob + (strings.ReplaceAll(`<Transform name="TRANSFORM_DISPLAY_NAME"/>
+		`, "TRANSFORM_DISPLAY_NAME", transformName))
+
+	}
 
 	localTAS := `
 	<MaltegoServer name="Local" enabled="true" description="Local transforms hosted on this machine" url="http://localhost">
@@ -119,38 +159,17 @@ func createMaltegoTransform(maltegoSourceEntity string) {
 	   <Protocol version="0.0"/>
 	   <Authentication type="none"/>
 	   <Transforms> 
-		  <Transform name="TRANSFORM_DISPLAY_NAME"/>
+		  TRANSFORM_DISPLAY_NAME
 	   </Transforms>
 	   <Seeds/>
 	</MaltegoServer>`
-	localTAS = strings.ReplaceAll(localTAS, "TRANSFORM_DISPLAY_NAME", transformName)
-	fmt.Println(transformSettings, transformXML, localTAS)
-
-	// Define temporary path and Maltego zip Folder name
-	maltegoTransformBasepath := "/tmp/SirtMaltego/"
-	maltegoTransformLocal := maltegoTransformBasepath + "TransformRepositories/Local/"
-	maltegoLocalServers := maltegoTransformBasepath + "/Servers/"
-	OK := os.MkdirAll(maltegoTransformLocal, os.ModePerm)
-	// Create teh folder for Local.tas
-	OK = os.MkdirAll(maltegoLocalServers, os.ModePerm)
-	if OK != nil {
-		fmt.Println("An error occured", OK)
-	}
-
-	// Create .transform file from bytes
-	transformFile, err := os.Create(maltegoTransformLocal + transformName + ".transform")
-	// Create .transformSettings file from bytes
-	transformSettingsFile, err := os.Create(maltegoTransformLocal + transformName + ".transformsettings")
+	TASFile, err := os.Create(maltegoLocalServers + "local.tas")
 	if err != nil {
 		log.Fatal("File creation failed", err)
 	}
-	TASFile, err := os.Create(maltegoLocalServers + "local.tas")
-
-	transformFile.Write([]byte(transformXML))
-	transformSettingsFile.Write([]byte(transformSettings))
+	localTAS = strings.ReplaceAll(localTAS, "TRANSFORM_DISPLAY_NAME", transformNameBlob)
 	TASFile.Write([]byte(localTAS))
 	// Write ZIP files to ..\TransformRepositories\Local\<displayName>.
-
 }
 
 func runESQuery(query string, index string, maltegoEntitys []queryTransform) *gabs.Container {
