@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/Jeffail/gabs"
@@ -54,7 +56,6 @@ type queryTransform struct {
 }
 
 func createMaltegoTransform(maltegoSourceEntities string) {
-	``
 	// TRANSFORM_APP_PATH
 	// MALTEGO_SOURCE_ENTITY
 	// FIELD_FLAG
@@ -261,6 +262,32 @@ func main() {
 	// query - Size 0 for maximum speed - data.ip:12.206.218.178
 
 	// list indexes
+	if *listFlag {
+		// ElasticSearch client initialization
+		creds := credentials.NewEnvCredentials()
+		signer := v4.NewSigner(creds)
+		awsClient, err := aws_signing_client.New(signer, nil, "es", "us-west-2")
+		esc, err := elastic.NewClient(elastic.SetURL(esURL), elastic.SetScheme("https"), elastic.SetHttpClient(awsClient), elastic.SetSniff(false), elastic.SetHealthcheck(false))
+		if err != nil {
+			fmt.Println("ES client creation failed", err)
+			os.Exit(1)
+		} else {
+			_, err := esc.IndexExists("cloudtrail-2019-w22").Do(context.Background())
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			IndexNames, _ := (esc.IndexNames())
+			sort.Strings(IndexNames)
+			for i := range IndexNames {
+				SystemIndex, _ := regexp.Match("^\\.", []byte(IndexNames[i]))
+				if SystemIndex == false {
+					fmt.Println(IndexNames[i])
+				}
+			}
+			return
+		}
+	}
 
 	// Chunk queries across many weeks
 	if *maltegoOutput != "" {
