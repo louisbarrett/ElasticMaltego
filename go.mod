@@ -1,4 +1,4 @@
-module Users/louis.barrett/Projects/Vantage
+module ElasticMaltego
 
 go 1.13
 
