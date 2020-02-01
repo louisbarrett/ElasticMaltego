@@ -22,12 +22,13 @@ var (
 	searchResults  = []*elastic.SearchHit{}
 	indexFlag      = flag.String("index", "", "ElasticSearch index to query")
 	urlFlag        = flag.String("ES", "", "ElasticSearch URL")
-	maltegoOutput  = flag.String("m", "", "Maltego source entity i.e maltego.IPV4Address")
+	maltegoInput   = flag.String("type", "", "Maltego source entity i.e maltego.IPV4Address")
 	queryFlag      = flag.String("query", "", "Elasticsearch term query ")
 	queryFieldFlag = flag.String("field", "", "Elasticsearch field name for termquery")
 	listFlag       = flag.Bool("list", false, "list ElasticSearch indexes")
 	debugFlag      = flag.Bool("debug", false, "debug output")
 	limitFlag      = flag.Int("limit", 1000, "Result limit for query")
+	mapFlag        = flag.String("map", "", "ElasticSearch to Maltego entity mapping i.e data.ip:maltego.IPv4Address")
 	parsedJSON     *gabs.Container
 
 	entityTemplate = `
@@ -124,7 +125,7 @@ func createMaltegoTransform(maltegoSourceEntities string) {
 <TransformSettings enabled="true" disclaimerAccepted="false" showHelp="true" runWithAll="true" favorite="true">
    <Properties>
       <Property name="transform.local.command" type="string" popup="false">/usr/local/bin/aws-okta</Property>
-      <Property name="transform.local.parameters" type="string" popup="false">exec security-write  -- TRANSFORM_APP_PATH --ES ES_FLAG -index INDEX_FLAG -field FIELD_FLAG -query</Property>
+      <Property name="transform.local.parameters" type="string" popup="false">exec security-write  -- TRANSFORM_APP_PATH --ES ES_FLAG -index INDEX_FLAG -field FIELD_FLAG -map TRANSFORM_MAPPINGS -query</Property>
       <Property name="transform.local.working-directory" type="string" popup="false">/</Property>
       <Property name="transform.local.debug" type="boolean" popup="false">false</Property>
    </Properties>
@@ -135,6 +136,7 @@ func createMaltegoTransform(maltegoSourceEntities string) {
 		transformSettings = strings.ReplaceAll(transformSettings, "ES_FLAG", esURL)
 		transformSettings = strings.ReplaceAll(transformSettings, "INDEX_FLAG", *indexFlag)
 		transformSettings = strings.ReplaceAll(transformSettings, "FIELD_FLAG", *queryFieldFlag)
+		transformSettings = strings.ReplaceAll(transformSettings, "TRANSFORM_MAPPINGS", *mapFlag)
 
 		fmt.Println(transformSettings, transformXML)
 
@@ -238,7 +240,7 @@ func runESQuery(query string, index string, maltegoEntitys []queryTransform) *ga
 
 			}
 
-		}
+		} // This is a test
 	}
 
 	// Query Client Finalized
@@ -290,15 +292,27 @@ func main() {
 	}
 
 	// Chunk queries across many weeks
-	if *maltegoOutput != "" {
-		createMaltegoTransform(*maltegoOutput)
+	if *maltegoInput != "" {
+		createMaltegoTransform(*maltegoInput)
 	} else {
-		GroupByUserID := queryTransform{field: "data.viewer.userId.keyword", maltegoType: "segment.UserId", limit: 1000}
-		GroupByUserEmail := queryTransform{field: "data.viewer.userEmail.keyword", maltegoType: "maltego.EmailAddress", limit: 1000}
-		GroupByUserWorkspaceID := queryTransform{field: "data.viewer.userName.keyword", maltegoType: "maltego.Person", limit: 1000}
-		GroupByUserAgent := queryTransform{field: "data.userAgent.keyword", maltegoType: "maltego.Phrase", limit: 1000}
+		// GroupByUserID := queryTransform{field: "data.viewer.userId.keyword", maltegoType: "segment.UserId", limit: 1000}
+		// GroupByUserEmail := queryTransform{field: "data.viewer.userEmail.keyword", maltegoType: "maltego.EmailAddress", limit: 1000}
+		// GroupByUserWorkspaceID := queryTransform{field: "data.viewer.userName.keyword", maltegoType: "maltego.Person", limit: 1000}
+		// GroupByUserAgent := queryTransform{field: "data.userAgent.keyword", maltegoType: "maltego.Phrase", limit: 1000}
 
-		maltegoTransforms := []queryTransform{GroupByUserEmail, GroupByUserID, GroupByUserWorkspaceID, GroupByUserAgent}
-		runESQuery(string(*queryFieldFlag)+"\""+string(*queryFlag)+"\"", *indexFlag, maltegoTransforms)
+		maltegoTransforms := []queryTransform{}
+
+		// Parse flagMap into queryTransforms
+		if *mapFlag != "" && *maltegoInput == "" {
+			userTransforms := (strings.Split(*mapFlag, ","))
+			for _, transformMap := range userTransforms {
+				maltegoTransforms = append(maltegoTransforms, queryTransform{field: (strings.Split(transformMap, ":")[0]), maltegoType: (strings.Split(transformMap, ":")[1])})
+			}
+			runESQuery(string(*queryFieldFlag)+"\""+string(*queryFlag)+"\"", *indexFlag, maltegoTransforms)
+
+		} else {
+			flag.Usage()
+		}
+
 	}
 }
