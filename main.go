@@ -30,6 +30,7 @@ var (
 	limitFlag      = flag.Int("limit", 1000, "Result limit for query")
 	mapFlag        = flag.String("map", "", "ElasticSearch to Maltego entity mapping i.e data.ip:maltego.IPv4Address")
 	parsedJSON     *gabs.Container
+	AWSOktaPath                                          = os.Getenv("AWSOktaPath")
 
 	entityTemplate = `
 	<Entity Type="TYPE">
@@ -71,10 +72,12 @@ func createMaltegoTransform(maltegoSourceEntities string) {
 	// Create Maltego folder structure
 
 	// Define temporary path and Maltego zip Folder name
-	maltegoTransformBasepath := "/tmp/SirtMaltego/"
+	// maltegoTransformBasepath := "/tmp/SirtMaltego/"
+	maltegoTransformBasepath := "c:\\Temp\\"
 	maltegoTransformLocal := maltegoTransformBasepath + "TransformRepositories/Local/"
 	// Generate TAS file including all transforms
-	maltegoLocalServers := maltegoTransformBasepath + "/Servers/"
+	// maltegoLocalServers := maltegoTransformBasepath + "/Servers/"
+	maltegoLocalServers := maltegoTransformBasepath + "\\Servers\\"
 
 	OK := os.MkdirAll(maltegoTransformLocal, os.ModePerm)
 	// Create teh folder for Local.tas
@@ -117,14 +120,15 @@ func createMaltegoTransform(maltegoSourceEntities string) {
    <OutputEntities/>
    <StealthLevel>0</StealthLevel>
 </MaltegoTransform>`
+
 		transformXML = strings.ReplaceAll(transformXML, "TRANSFORM_GROUP", transformGroup)
 		transformXML = strings.ReplaceAll(transformXML, "TRANSFORM_DISPLAY_NAME", transformDisplayName)
 		transformXML = strings.ReplaceAll(transformXML, "MALTEGO_SOURCE_ENTITY", maltegoSourceEntity)
 
 		transformSettings := `
-<TransformSettings enabled="true" disclaimerAccepted="false" showHelp="true" runWithAll="true" favorite="true">
+   <TransformSettings enabled="true" disclaimerAccepted="false" showHelp="true" runWithAll="true" favorite="true">
    <Properties>
-      <Property name="transform.local.command" type="string" popup="false">/usr/local/bin/aws-okta</Property>
+      <Property name="transform.local.command" type="string" popup="false">AWS_OKTA</Property>
       <Property name="transform.local.parameters" type="string" popup="false">exec security-write  -- TRANSFORM_APP_PATH --ES ES_FLAG -index INDEX_FLAG -field FIELD_FLAG -map TRANSFORM_MAPPINGS -query</Property>
       <Property name="transform.local.working-directory" type="string" popup="false">/</Property>
       <Property name="transform.local.debug" type="boolean" popup="false">false</Property>
@@ -137,6 +141,7 @@ func createMaltegoTransform(maltegoSourceEntities string) {
 		transformSettings = strings.ReplaceAll(transformSettings, "INDEX_FLAG", *indexFlag)
 		transformSettings = strings.ReplaceAll(transformSettings, "FIELD_FLAG", *queryFieldFlag)
 		transformSettings = strings.ReplaceAll(transformSettings, "TRANSFORM_MAPPINGS", *mapFlag)
+		transformSettings = strings.ReplaceAll(transformSettings,   "AWS_OKTA",AWSOktaPath
 
 		fmt.Println(transformSettings, transformXML)
 
@@ -165,8 +170,9 @@ func createMaltegoTransform(maltegoSourceEntities string) {
 		  TRANSFORM_DISPLAY_NAME
 	   </Transforms>
 	   <Seeds/>
-	</MaltegoServer>`
-	TASFile, err := os.Create(maltegoLocalServers + "local.tas")
+	</MaltegoServer>
+`
+TASFile, err := os.Create(maltegoLocalServers + "local.tas")
 	if err != nil {
 		log.Fatal("File creation failed", err)
 	}
