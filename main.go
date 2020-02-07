@@ -30,7 +30,7 @@ var (
 	limitFlag      = flag.Int("limit", 1000, "Result limit for query")
 	mapFlag        = flag.String("map", "", "ElasticSearch to Maltego entity mapping i.e data.ip:maltego.IPv4Address")
 	parsedJSON     *gabs.Container
-	AWSOktaPath                                          = os.Getenv("AWSOktaPath")
+	AWSOktaPath    = os.Getenv("AWSOktaPath")
 
 	entityTemplate = `
 	<Entity Type="TYPE">
@@ -141,7 +141,7 @@ func createMaltegoTransform(maltegoSourceEntities string) {
 		transformSettings = strings.ReplaceAll(transformSettings, "INDEX_FLAG", *indexFlag)
 		transformSettings = strings.ReplaceAll(transformSettings, "FIELD_FLAG", *queryFieldFlag)
 		transformSettings = strings.ReplaceAll(transformSettings, "TRANSFORM_MAPPINGS", *mapFlag)
-		transformSettings = strings.ReplaceAll(transformSettings,   "AWS_OKTA",AWSOktaPath
+		transformSettings = strings.ReplaceAll(transformSettings, "AWS_OKTA", AWSOktaPath)
 
 		fmt.Println(transformSettings, transformXML)
 
@@ -172,7 +172,7 @@ func createMaltegoTransform(maltegoSourceEntities string) {
 	   <Seeds/>
 	</MaltegoServer>
 `
-TASFile, err := os.Create(maltegoLocalServers + "local.tas")
+	TASFile, err := os.Create(maltegoLocalServers + "local.tas")
 	if err != nil {
 		log.Fatal("File creation failed", err)
 	}
