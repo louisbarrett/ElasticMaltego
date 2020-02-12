@@ -17,9 +17,10 @@ Maltego UI.
 `./ElasticMaltego -h`
 
 ```
-Usage of ./ElasticMaltego
   -ES string
         ElasticSearch URL
+  -config string
+        Path to an elastic to maltego csv file
   -debug
         debug output
   -field string
@@ -34,12 +35,11 @@ Usage of ./ElasticMaltego
         ElasticSearch to Maltego entity mapping i.e data.ip:maltego.IPv4Address
   -query string
         Elasticsearch term query
-  -type string
-        Maltego source entity i.e maltego.IPV4Address
 ```
 
-## Transform package output
-`./ElasticMaltego --field data.ip -m maltego.IPV4Address   `
+## Creating a maltego Transform package
+
+`./ElasticMaltego --config ~/Projects/Elasticmaltego/Elastic.csv --weeks 1`
 
 ```
 Generates valid maltego mtz files for transform import with the structure below:
@@ -55,3 +55,36 @@ Generates valid maltego mtz files for transform import with the structure below:
 
 ```
 
+## Creating a single Transform
+`./ElasticMaltego -index $INDEX -map data.ip.keyword:maltego.IPv4Address  -type maltego.IPv4Address -field data.ip.keyword -query"`
+
+Returns maltego XML when used as a local transform
+```
+        <MaltegoMessage>
+        <MaltegoTransformResponseMessage>
+        <Entities>
+
+        <Entity Type="maltego.EmailAddress">
+        <Value>re@dacted.com</Value>
+        <Weight>100</Weight>
+        </Entity>
+
+        <Entity Type="maltego.Person">
+        <Value>Louis Barrett</Value>
+        <Weight>100</Weight>
+        </Entity>
+
+        <Entity Type="maltego.IPv4Address">
+        <Value>123.45.67.89</Value>
+        <Weight>100</Weight>
+        </Entity>
+
+        <Entity Type="maltego.Phrase">
+        <Value>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36</Value>
+        <Weight>100</Weight>
+        </Entity>
+
+        </Entities>
+        </MaltegoTransformResponseMessage>
+        </MaltegoMessage>
+```
