@@ -209,7 +209,7 @@ func createZIPFile() {
 	zipBuffer := new(bytes.Buffer)
 	zipWriter := zip.NewWriter(zipBuffer)
 	for i := range filesCreated {
-		zipPath := strings.Replace(filesCreated[i], maltegoTransformBasepath, "", 1)
+		zipPath := strings.Replace(filesCreated[i], (maltegoTransformBasepath + "/"), "", 1)
 
 		zipContent, err := zipWriter.Create(zipPath)
 		if err != nil {
@@ -225,7 +225,7 @@ func createZIPFile() {
 		fmt.Println(zipPath)
 
 	}
-	zipWriter.Flush()
+	// zipWriter.Flush()
 	zipWriter.Close()
 	ioutil.WriteFile("/tmp/ElasticMaltego_today.mtz", zipBuffer.Bytes(), os.FileMode(0777))
 	// Close on completion
