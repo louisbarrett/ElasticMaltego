@@ -94,8 +94,8 @@ Returns maltego XML when used as a local transform
 
 ## To-Do 
 
-1. Generate PK (mtz) file directly
-2. Allow the user to control where the transforms end up using `--mtz`
+
+1. Allow the user to control where the transforms end up using `--mtz`
 
 
 
