@@ -290,8 +290,7 @@ func main() {
 		awsClient, err := aws_signing_client.New(signer, nil, "es", "us-west-2")
 		esc, err := elastic.NewClient(elastic.SetURL(esURL), elastic.SetScheme("https"), elastic.SetHttpClient(awsClient), elastic.SetSniff(false), elastic.SetHealthcheck(false))
 		if err != nil {
-			fmt.Println("ES client creation failed", err)
-			os.Exit(1)
+			log.Fatal("ES client creation failed", err)
 		} else {
 
 			IndexNames, _ := (esc.IndexNames())
@@ -343,7 +342,6 @@ func main() {
 
 	} else {
 		flag.Usage()
-		fmt.Println(maltegoTransformBasepath)
 	}
 
 }
