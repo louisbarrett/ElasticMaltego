@@ -227,7 +227,7 @@ func createZIPFile() {
 	}
 	// zipWriter.Flush()
 	zipWriter.Close()
-	ioutil.WriteFile("/tmp/ElasticMaltego_today.mtz", zipBuffer.Bytes(), os.FileMode(0777))
+	ioutil.WriteFile("ElasticMaltego.mtz", zipBuffer.Bytes(), os.FileMode(0777))
 	// Close on completion
 }
 
