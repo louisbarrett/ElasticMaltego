@@ -281,17 +281,6 @@ func runESQuery(query string, index string, maltegoEntitys []queryTransform) *ga
 
 func main() {
 	flag.Parse()
-	// parse user input
-	// * fuzzy index look up - Display # next to index
-	// * weeks - number of indexes to shard through
-	// * data_model - data model file to include
-
-	// ElasticMaltegoObject - q, output[field aggregation <---> maltego.TYPE mapping,...]
-	// maltego outputs
-	// field aggregation <---> maltego.TYPE mapping
-
-	// query - Size 0 for maximum speed - data.ip:12.206.218.178
-
 	// list indexes
 	if *listFlag {
 		// ElasticSearch client initialization
