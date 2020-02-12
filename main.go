@@ -36,10 +36,8 @@ var (
 	transformConfig = flag.String("config", "", "Path to an elastic to maltego csv file")
 	parsedJSON      *gabs.Container
 	//AWSOktaPath the location of aws-okta such as /usr/bin/aws-okta
-	AWSOktaPath              = os.Getenv("AWSOktaPath")
-	maltegoTransformBasepath = "c:\\Temp\\"
-	maltegoTransformLocal    = maltegoTransformBasepath + "TransformRepositories\\Local\\"
-	maltegoLocalServers      = maltegoTransformBasepath + "\\Servers\\"
+	AWSOktaPath = os.Getenv("AWSOktaPath")
+
 	//transformGroup the prefix for the transforms
 	transformGroup = "sirt"
 
@@ -340,6 +338,7 @@ func main() {
 
 	} else {
 		flag.Usage()
+		fmt.Println(maltegoTransformBasepath)
 	}
 
 }
