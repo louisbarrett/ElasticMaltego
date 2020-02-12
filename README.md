@@ -3,14 +3,16 @@ Create Maltego transforms and import packages (mtz) from  ElasticSearch term que
 
 # Why 
 
-Maltego has a huge number of really useful transforms for working with OSINT data, however there is not much in the way of transform for
+Maltego has a huge number of really useful transforms for working with OSINT data, however there is not much in the way of transforms for
 PSINT data (housed within the  SIEM). The purpose of this project is to provide an easy process by which data housed in ElasticSearch databases
 can be aggregated and delivered to Maltego as a set of entities.
 
 # How
 
-This tool is able to either output maltego entities directly using a query, or produce a Maltego transform mtz export for inclusion in your 
-Maltego UI.
+This tool is able to either output maltego entities directly using an elasticsearch query, or produce a Maltego transform mtz pacckage for import into your 
+Maltego UI. 
+
+Transform package is created in the local temp directory by default
 
 # Usage 
 
@@ -39,7 +41,7 @@ Maltego UI.
 
 ## Creating a maltego Transform package
 
-`./ElasticMaltego --config ~/Projects/Elasticmaltego/Elastic.csv --weeks 1`
+`./ElasticMaltego --config ~/Projects/ElasticMaltego/Elastic.csv --weeks 1`
 
 ```
 Generates valid maltego mtz files for transform import with the structure below:
@@ -51,6 +53,7 @@ Generates valid maltego mtz files for transform import with the structure below:
 │   └── Local
 │       ├── <transformGroup>.<indexName>-<ByMaltegoEntity>.transform
 │       └── <transformGroup>.<indexName>-<ByMaltegoEntity>.transformsettings
+|      . . . 
 └── version.properties
 
 ```
@@ -88,3 +91,7 @@ Returns maltego XML when used as a local transform
         </MaltegoTransformResponseMessage>
         </MaltegoMessage>
 ```
+
+##To-Do 
+
+
