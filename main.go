@@ -281,9 +281,7 @@ func runESQuery(query string, index string, maltegoEntitys []queryTransform) *ga
 func main() {
 	flag.Parse()
 	// check for AWS_OKTA path variable set
-	if AWSOktaPath == "" {
-		log.Fatal("Please set the path to your aws-okta binary in the AWS_OKTA_PATH environment variable")
-	}
+
 	// list indexes
 	if *listFlag {
 		// ElasticSearch client initialization
@@ -310,6 +308,9 @@ func main() {
 
 	// Chunk queries across many weeks
 	if *transformConfig != "" {
+		if AWSOktaPath == "" {
+			log.Fatal("Please set the path to your aws-okta binary in the AWS_OKTA_PATH environment variable")
+		}
 		transformCSVFile, err := os.Open(*transformConfig)
 		if err != nil {
 			log.Fatal(err)
