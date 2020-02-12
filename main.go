@@ -36,7 +36,7 @@ var (
 	transformConfig = flag.String("config", "", "Path to an elastic to maltego csv file")
 	parsedJSON      *gabs.Container
 	//AWSOktaPath the location of aws-okta such as /usr/bin/aws-okta
-	AWSOktaPath = os.Getenv("AWSOktaPath")
+	AWSOktaPath = os.Getenv("AWS_OKTA_PATH")
 
 	//transformGroup the prefix for the transforms
 	transformGroup = "sirt"
@@ -280,6 +280,10 @@ func runESQuery(query string, index string, maltegoEntitys []queryTransform) *ga
 
 func main() {
 	flag.Parse()
+	// check for AWS_OKTA path variable set
+	if AWSOktaPath == "" {
+		log.Fatal("Please set the path to your aws-okta binary in the AWS_OKTA_PATH environment variable")
+	}
 	// list indexes
 	if *listFlag {
 		// ElasticSearch client initialization
