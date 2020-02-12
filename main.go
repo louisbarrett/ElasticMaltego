@@ -27,10 +27,11 @@ var (
 	indexFlag       = flag.String("index", "", "ElasticSearch index to query")
 	urlFlag         = flag.String("ES", "", "ElasticSearch URL")
 	queryFlag       = flag.String("query", "", "Elasticsearch term query ")
-	queryFieldFlag  = flag.String("field", "", "Elasticsearch field name for termquery")
-	listFlag        = flag.Bool("list", false, "list ElasticSearch indexes")
-	debugFlag       = flag.Bool("debug", false, "debug output")
+	queryFieldFlag  = flag.String("field", "", "Elasticsearch field name for term query")
+	listFlag        = flag.Bool("list", false, "List ElasticSearch indexes on ES_URL")
+	debugFlag       = flag.Bool("debug", false, "Enable debug output")
 	limitFlag       = flag.Int("limit", 1000, "Result limit for query")
+	weeksFlag       = flag.Int("weeks", 4, "Number of weeks to search in each log")
 	mapFlag         = flag.String("map", "", "ElasticSearch to Maltego entity mapping i.e data.ip:maltego.IPv4Address")
 	transformConfig = flag.String("config", "", "Path to an elastic to maltego csv file")
 	parsedJSON      *gabs.Container
@@ -219,7 +220,7 @@ func runESQuery(query string, index string, maltegoEntitys []queryTransform) *ga
 	// Parse Query input
 	QueryInput := elastic.NewQueryStringQuery(query)
 	Now := time.Now()
-	for Weeks := 1; Weeks < 6; Weeks++ {
+	for Weeks := 1; Weeks < *weeksFlag; Weeks++ {
 
 		Now = Now.AddDate(0, 0, 7*(Weeks*-1))
 		YearInt, WeekInt := Now.ISOWeek()
