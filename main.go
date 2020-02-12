@@ -1,6 +1,8 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/csv"
 	"flag"
@@ -40,6 +42,9 @@ var (
 
 	//transformGroup the prefix for the transforms
 	transformGroup = "sirt"
+
+	// filesCreated - Contains a list of files generated as a part of this package
+	filesCreated []string
 
 	entityTemplate = `
 	<Entity Type="TYPE">
@@ -138,8 +143,12 @@ func createMaltegoTransform(maltegoInputType string, elasticIndexName string, qu
 		}
 		// Create .transform file from bytes
 		transformFile, err := os.Create(maltegoTransformLocal + transformName + ".transform")
+		filesCreated = append(filesCreated, (maltegoTransformLocal + transformName + ".transform"))
+
 		// Create .transformSettings file from bytes
 		transformSettingsFile, err := os.Create(maltegoTransformLocal + transformName + ".transformsettings")
+		filesCreated = append(filesCreated, (maltegoTransformLocal + transformName + ".transformsettings"))
+
 		if err != nil {
 			log.Fatal("File creation failed", err)
 		}
@@ -191,7 +200,35 @@ func generateTASFile() {
 	}
 	localTAS = strings.ReplaceAll(localTAS, "TRANSFORM_DISPLAY_NAME", transformNameBlob)
 	TASFile.Write([]byte(localTAS))
-	// Write ZIP files to ..\TransformRepositories\Local\<displayName>.
+	// Add local.tas to the files list
+	filesCreated = append(filesCreated, (maltegoLocalServers + "local.tas"))
+}
+
+func createZIPFile() {
+	// Create the file in which to write the zip payload - os.Create
+	zipBuffer := new(bytes.Buffer)
+	zipWriter := zip.NewWriter(zipBuffer)
+	for i := range filesCreated {
+		zipPath := strings.Replace(filesCreated[i], maltegoTransformBasepath, "", 1)
+
+		zipContent, err := zipWriter.Create(zipPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// get contents of the written file
+		originalPath := filesCreated[i]
+		originalBytes, err := ioutil.ReadFile(originalPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		zipContent.Write(originalBytes)
+		fmt.Println(zipPath)
+
+	}
+	zipWriter.Flush()
+	zipWriter.Close()
+	ioutil.WriteFile("/tmp/ElasticMaltego_today.mtz", zipBuffer.Bytes(), os.FileMode(0777))
+	// Close on completion
 }
 
 func runESQuery(query string, index string, maltegoEntitys []queryTransform) *gabs.Container {
@@ -305,7 +342,7 @@ func main() {
 		}
 	}
 
-	// Chunk queries across many weeks
+	// is the --config flag set? If so generate a transform .mtz file from the entity map csv
 	if *transformConfig != "" {
 		if AWSOktaPath == "" {
 			log.Fatal("Please set the path to your aws-okta binary in the AWS_OKTA_PATH environment variable")
@@ -321,7 +358,7 @@ func main() {
 			CSVRow, err := transformCSVData.Read()
 			if err != nil {
 				generateTASFile()
-
+				createZIPFile()
 				return
 			}
 			createMaltegoTransform(CSVRow[2], CSVRow[0], CSVRow[1], CSVRow[3])
@@ -330,16 +367,16 @@ func main() {
 
 	}
 
-	maltegoTransforms := []queryTransform{}
-
-	// Parse flagMap into queryTransforms
+	// Parse mapFlag into queryTransforms -- create transform output from elastic search query
 	if *mapFlag != "" && *transformConfig == "" {
+		maltegoTransforms := []queryTransform{}
+
 		userTransforms := (strings.Split(*mapFlag, ","))
 		for _, transformMap := range userTransforms {
 			maltegoTransforms = append(maltegoTransforms, queryTransform{field: (strings.Split(transformMap, ":")[0]), maltegoType: (strings.Split(transformMap, ":")[1])})
 		}
 		runESQuery(string(*queryFieldFlag)+"\""+string(*queryFlag)+"\"", *indexFlag, maltegoTransforms)
-
+		// If no valid flags are set show the usage doc
 	} else {
 		flag.Usage()
 	}
