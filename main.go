@@ -209,11 +209,10 @@ func createZIPFile() {
 	zipBuffer := new(bytes.Buffer)
 	zipWriter := zip.NewWriter(zipBuffer)
 
-	fmt.Println(maltegoTransformBasepath, maltegoLocalServers, maltegoTransformLocal)
 	for i := range filesCreated {
 		zipPath := strings.Replace(filesCreated[i], (maltegoTransformBasepath + PATH_SEPARATOR), "", 1)
+		// zip files prefer forward slashes
 		zipPath = strings.ReplaceAll(zipPath, "\\", "/")
-		fmt.Println("Removing ", (maltegoTransformBasepath + PATH_SEPARATOR))
 		zipContent, err := zipWriter.Create(zipPath)
 		if err != nil {
 			log.Fatal(err)
@@ -225,18 +224,14 @@ func createZIPFile() {
 			log.Fatal(err)
 		}
 		zipContent.Write(originalBytes)
-		fmt.Println(originalPath, zipPath)
-
 	}
-	// zipWriter.Flush()
+	zipWriter.Flush()
 	zipWriter.Close()
 	ioutil.WriteFile("ElasticMaltego.mtz", zipBuffer.Bytes(), os.FileMode(0700))
-	// Close on completion
 }
 
 func runESQuery(query string, index string, maltegoEntitys []queryTransform) *gabs.Container {
 	jsonResults := gabs.New()
-
 	// Check to see if ElasticSearch URL is set
 	if esURL == "" {
 		if *urlFlag != "" {
