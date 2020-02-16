@@ -208,9 +208,12 @@ func createZIPFile() {
 	// Create the file in which to write the zip payload - os.Create
 	zipBuffer := new(bytes.Buffer)
 	zipWriter := zip.NewWriter(zipBuffer)
-	for i := range filesCreated {
-		zipPath := strings.Replace(filesCreated[i], (maltegoTransformBasepath + "/"), "", 1)
 
+	fmt.Println(maltegoTransformBasepath, maltegoLocalServers, maltegoTransformLocal)
+	for i := range filesCreated {
+		zipPath := strings.Replace(filesCreated[i], (maltegoTransformBasepath + PATH_SEPARATOR), "", 1)
+		zipPath = strings.ReplaceAll(zipPath, "\\", "/")
+		fmt.Println("Removing ", (maltegoTransformBasepath + PATH_SEPARATOR))
 		zipContent, err := zipWriter.Create(zipPath)
 		if err != nil {
 			log.Fatal(err)
@@ -222,7 +225,7 @@ func createZIPFile() {
 			log.Fatal(err)
 		}
 		zipContent.Write(originalBytes)
-		fmt.Println(zipPath)
+		fmt.Println(originalPath, zipPath)
 
 	}
 	// zipWriter.Flush()
