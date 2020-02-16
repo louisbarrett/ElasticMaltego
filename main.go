@@ -230,7 +230,7 @@ func createZIPFile() {
 	ioutil.WriteFile("ElasticMaltego.mtz", zipBuffer.Bytes(), os.FileMode(0700))
 }
 
-func runESQuery(query string, index string, maltegoEntitys []queryTransform) *gabs.Container {
+func runESQuery(query string, index string, maltegoEntitys []queryTransform) {
 	jsonResults := gabs.New()
 	// Check to see if ElasticSearch URL is set
 	if esURL == "" {
@@ -284,33 +284,32 @@ func runESQuery(query string, index string, maltegoEntitys []queryTransform) *ga
 			}
 			Results, err := Client.Do(context.Background())
 			if err != nil {
-				log.Fatal("ES Query failed ", err)
-			} else {
-				// Process the query aggs
+				fmt.Println("ES Query failed ", err)
+				return
+			}
+			// Process the query aggs
 
-				data, ok := Results.Aggregations.Filters("top")
-				groupedResults, ok := data.Aggregations.Terms(entityTransform.maltegoType)
-				if !ok {
-					log.Fatal("Error Retrieving results ", err)
+			data, ok := Results.Aggregations.Filters("top")
+			groupedResults, ok := data.Aggregations.Terms(entityTransform.maltegoType)
+			if !ok {
+				log.Fatal("Error Retrieving results ", err)
+			}
+			for _, k := range groupedResults.Buckets {
+				if k.DocCount > 0 {
+					entityObject := strings.Replace(entityTemplate, "TYPE", entityTransform.maltegoType, 1)
+					entityObject = strings.Replace(entityObject, "DATA", k.Key.(string), 1)
+					maltegoEntities = maltegoEntities + entityObject
+
 				}
-				for _, k := range groupedResults.Buckets {
-					if k.DocCount > 0 {
-						entityObject := strings.Replace(entityTemplate, "TYPE", entityTransform.maltegoType, 1)
-						entityObject = strings.Replace(entityObject, "DATA", k.Key.(string), 1)
-						maltegoEntities = maltegoEntities + entityObject
 
-					}
+			}
 
-				}
-
-			} // This is a test
 		}
 
 		// Query Client Finalized
 		maltegoMessage := strings.Replace(maltegoMessageTemplate, "MALTEGO_ENTITY", maltegoEntities, -1)
 		fmt.Println(maltegoMessage)
 	}
-	return jsonResults
 }
 
 func main() {
