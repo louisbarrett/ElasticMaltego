@@ -59,7 +59,7 @@ Generates valid maltego mtz files for transform import with the structure below:
 ```
 
 ## Creating a single Transform
-`./ElasticMaltego -index $INDEX -map data.ip.keyword:maltego.IPv4Address  -type maltego.IPv4Address -field data.ip.keyword -query"`
+`./ElasticMaltego -index $INDEX -map data.ip.keyword:maltego.IPv4Address -field data.ip.keyword -query $QUERY`
 
 Returns maltego XML when used as a local transform
 ```
