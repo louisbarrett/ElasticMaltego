@@ -41,7 +41,7 @@ Transform package is created in the local temp directory by default
 
 ## Creating a maltego Transform package
 
-`./ElasticMaltego --config ~/Projects/ElasticMaltego/Elastic.csv --weeks 1`
+`./ElasticMaltego --config ~/Projects/ElasticMaltego/Elastic.csv --weeks 1 --mtz ~/Output.mtz`
 
 ```
 Generates valid maltego mtz files for transform import with the structure below:
@@ -98,11 +98,3 @@ Returns maltego XML when used as a local transform
         </MaltegoTransformResponseMessage>
         </MaltegoMessage>
 ```
-
-## To-Do 
-
-
-1. Allow the user to control where the transforms end up using `--mtz`
-
-
-
