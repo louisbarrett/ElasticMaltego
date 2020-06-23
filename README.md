@@ -9,7 +9,7 @@ can be aggregated and delivered to Maltego as a set of entities.
 
 # How
 
-This tool is able to either output maltego entities directly using an elasticsearch query, or produce a Maltego transform mtz pacckage for import into your 
+This tool is able to either output maltego entities directly using an elasticsearch query, or produce a Maltego transform mtz package for import into your 
 Maltego UI. 
 
 Transform package is created in the local temp directory by default
@@ -43,9 +43,8 @@ Transform package is created in the local temp directory by default
 
 `./ElasticMaltego --config ~/Projects/ElasticMaltego/Elastic.csv --weeks 1 --mtz ~/Output.mtz`
 
-```
 Generates valid maltego mtz files for transform import with the structure below:
-
+```
 
 ├── Servers
 │   └── Local.tas
