@@ -41,7 +41,7 @@ Transform package is created in the local temp directory by default
 
 ## Creating a maltego Transform package
 
-`./ElasticMaltego --awsokta=false --config ~/Projects/ElasticMaltego/Elastic.csv --weeks 1 --mtz ~`
+`./ElasticMaltego --config ~/Projects/ElasticMaltego/Elastic.csv --weeks 1 --mtz ~/Output.mtz`
 
 ```
 Generates valid maltego mtz files for transform import with the structure below:
