@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Jeffail/gabs"
+	"github.com/Jeffail/gabs/v2"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
 	"github.com/olivere/elastic"
@@ -24,21 +24,25 @@ import (
 )
 
 var (
-	esURL           = os.Getenv("ES_URL")
-	searchResults   = []*elastic.SearchHit{}
-	indexFlag       = flag.String("index", "", "ElasticSearch index to query")
-	urlFlag         = flag.String("ES", "", "ElasticSearch URL")
-	queryFlag       = flag.String("query", "", "Elasticsearch term query ")
-	queryFieldFlag  = flag.String("field", "", "Elasticsearch field name for term query")
-	listFlag        = flag.Bool("list", false, "List ElasticSearch indexes on ES_URL")
-	debugFlag       = flag.Bool("debug", false, "Enable debug output")
-	limitFlag       = flag.Int("limit", 1000, "Result limit for query")
-	weeksFlag       = flag.Int("weeks", 4, "Number of weeks to search in each log")
-	mapFlag         = flag.String("map", "", "ElasticSearch to Maltego entity mapping i.e data.ip:maltego.IPv4Address")
-	transformConfig = flag.String("config", "", "Path to an elastic to maltego csv file")
-	parsedJSON      *gabs.Container
+	esURL                    = os.Getenv("ES_URL")
+	searchResults            = []*elastic.SearchHit{}
+	indexFlag                = flag.String("index", "", "ElasticSearch index to query")
+	urlFlag                  = flag.String("ES", "", "ElasticSearch URL")
+	queryFlag                = flag.String("query", "", "Elasticsearch term query ")
+	queryFieldFlag           = flag.String("field", "", "Elasticsearch field name for term query")
+	listFlag                 = flag.Bool("list", false, "List ElasticSearch indexes on ES_URL")
+	debugFlag                = flag.Bool("debug", false, "Enable debug output")
+	limitFlag                = flag.Int("limit", 1000, "Result limit for query")
+	weeksFlag                = flag.Int("weeks", 4, "Number of weeks to search in each log")
+	mapFlag                  = flag.String("map", "", "ElasticSearch to Maltego entity mapping i.e data.ip:maltego.IPv4Address")
+	transformConfig          = flag.String("config", "", "Path to an elastic to maltego csv file")
+	transformPackageLocation = flag.String("mtz", maltegoTransformBasepath, "Output path for maltego mtz file")
+	useAWSOkta               = flag.Bool("AWSOkta", true, "Create a package with built in AWSOkta set path in AWS_OKTA_PATH env variable")
+	parsedJSON               *gabs.Container
 	//AWSOktaPath the location of aws-okta such as /usr/bin/aws-okta
 	AWSOktaPath = os.Getenv("AWS_OKTA_PATH")
+	//AWSOktaRole the AWS profile/role to use with AWSOkta
+	AWSOktaRole = os.Getenv("AWS_OKTA_ROLE")
 
 	//transformGroup the prefix for the transforms
 	transformGroup = "sirt"
@@ -120,16 +124,31 @@ func createMaltegoTransform(maltegoInputType string, elasticIndexName string, qu
 		transformXML = strings.ReplaceAll(transformXML, "MALTEGO_SOURCE_ENTITY", maltegoSourceEntity)
 
 		// Define .transformsettings template
-		transformSettings := `
+		var transformSettings string
+		if *useAWSOkta == true {
+			transformSettings = `
    <TransformSettings enabled="true" disclaimerAccepted="false" showHelp="true" runWithAll="true" favorite="true">
    <Properties>
       <Property name="transform.local.command" type="string" popup="false">AWS_OKTA</Property>
-      <Property name="transform.local.parameters" type="string" popup="false">exec security-write  -- TRANSFORM_APP_PATH --ES ES_FLAG -index INDEX_FLAG -field FIELD_FLAG -map TRANSFORM_MAPPINGS -query</Property>
+      <Property name="transform.local.parameters" type="string" popup="false">exec AWS_OKTA_ROLE -- TRANSFORM_APP_PATH --ES ES_FLAG -index INDEX_FLAG -field FIELD_FLAG -map TRANSFORM_MAPPINGS -query</Property>
       <Property name="transform.local.working-directory" type="string" popup="false">/</Property>
       <Property name="transform.local.debug" type="boolean" popup="false">false</Property>
    </Properties>
 </TransformSettings>
 `
+		} else {
+
+			transformSettings = `
+<TransformSettings enabled="true" disclaimerAccepted="false" showHelp="true" runWithAll="true" favorite="true">
+<Properties>
+   <Property name="transform.local.command" type="string" popup="false">TRANSFORM_APP_PATH</Property>
+   <Property name="transform.local.parameters" type="string" popup="false">--ES ES_FLAG -index INDEX_FLAG -field FIELD_FLAG -map TRANSFORM_MAPPINGS -query</Property>
+   <Property name="transform.local.working-directory" type="string" popup="false">/</Property>
+   <Property name="transform.local.debug" type="boolean" popup="false">false</Property>
+</Properties>
+</TransformSettings>
+`
+		}
 		// Write transformsettings data
 		transformSettings = strings.ReplaceAll(transformSettings, "TRANSFORM_APP_PATH", transformAppPath)
 		transformSettings = strings.ReplaceAll(transformSettings, "ES_FLAG", esURL)
@@ -137,6 +156,7 @@ func createMaltegoTransform(maltegoInputType string, elasticIndexName string, qu
 		transformSettings = strings.ReplaceAll(transformSettings, "FIELD_FLAG", queryField)
 		transformSettings = strings.ReplaceAll(transformSettings, "TRANSFORM_MAPPINGS", entityMap)
 		transformSettings = strings.ReplaceAll(transformSettings, "AWS_OKTA", AWSOktaPath)
+		transformSettings = strings.ReplaceAll(transformSettings, "AWS_OKTA_ROLE", AWSOktaRole)
 
 		if *debugFlag {
 			fmt.Println(transformSettings, transformXML)
@@ -210,7 +230,7 @@ func createZIPFile() {
 	zipWriter := zip.NewWriter(zipBuffer)
 
 	for i := range filesCreated {
-		zipPath := strings.Replace(filesCreated[i], (maltegoTransformBasepath + PATH_SEPARATOR), "", 1)
+		zipPath := strings.Replace(filesCreated[i], (*transformPackageLocation + PATH_SEPARATOR), "", 1)
 		// zip files prefer forward slashes
 		zipPath = strings.ReplaceAll(zipPath, "\\", "/")
 		zipContent, err := zipWriter.Create(zipPath)
