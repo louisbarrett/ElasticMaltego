@@ -37,7 +37,7 @@ var (
 	mapFlag                  = flag.String("map", "", "ElasticSearch to Maltego entity mapping i.e data.ip:maltego.IPv4Address")
 	transformConfig          = flag.String("config", "", "Path to an elastic to maltego csv file")
 	transformPackageLocation = flag.String("mtz", maltegoTransformBasepath, "Output path for maltego mtz file")
-	useAWSOkta               = flag.Bool("AWSOkta", true, "Create a package with built in AWSOkta set path in AWS_OKTA_PATH env variable")
+	useAWSOkta               = flag.Bool("AWSOkta", false, "Create a package with built in AWSOkta set path in AWS_OKTA_PATH env variable")
 	parsedJSON               *gabs.Container
 	//AWSOktaPath the location of aws-okta such as /usr/bin/aws-okta
 	AWSOktaPath = os.Getenv("AWS_OKTA_PATH")
