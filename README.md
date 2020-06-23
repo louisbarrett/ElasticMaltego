@@ -58,6 +58,13 @@ Generates valid maltego mtz files for transform import with the structure below:
 
 ```
 
+## Sample Elastic.csv file 
+|BaseIndex|	Field	|InputType|	FieldEntityMap|
+| ------------- | ------------- |---------|------|
+| cloudtrail | sourceIPAddress.keyword  |maltego.IPv4Address|sourceIPAddress.keyword:maltego.IPv4Address,userAgent.keyword:maltego.Phrase,userIdentity.principalId.keyword:maltego.Person,userIdentity.arn.keyword:maltego.Person|
+| cloudtrail  | userAgent.keyword  |maltego.Phrase|sourceIPAddress.keyword:maltego.IPv4Address,userAgent.keyword:maltego.Phrase,userIdentity.principalId.keyword:maltego.Person,userIdentity.arn.keyword:maltego.Person|
+| cloudtrail  |  userIdentity.sessionContext.sessionIssuer.userName|maltego.Phrase|sourceIPAddress.keyword:maltego.IPv4Address,userAgent.keyword:maltego.Phrase,userIdentity.principalId.keyword:maltego.Person,userIdentity.arn.keyword:maltego.Person|
+
 ## Creating a single Transform
 `./ElasticMaltego -index $INDEX -map data.ip.keyword:maltego.IPv4Address -field data.ip.keyword -query $QUERY`
 
