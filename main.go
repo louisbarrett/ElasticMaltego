@@ -19,7 +19,7 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 	"github.com/sha1sum/aws_signing_client"
 )
 
