@@ -155,8 +155,8 @@ func createMaltegoTransform(maltegoInputType string, elasticIndexName string, qu
 		transformSettings = strings.ReplaceAll(transformSettings, "INDEX_FLAG", elasticIndexName)
 		transformSettings = strings.ReplaceAll(transformSettings, "FIELD_FLAG", queryField)
 		transformSettings = strings.ReplaceAll(transformSettings, "TRANSFORM_MAPPINGS", entityMap)
-		transformSettings = strings.ReplaceAll(transformSettings, "AWS_OKTA", AWSOktaPath)
 		transformSettings = strings.ReplaceAll(transformSettings, "AWS_OKTA_ROLE", AWSOktaRole)
+		transformSettings = strings.ReplaceAll(transformSettings, "AWS_OKTA", AWSOktaPath)
 
 		if *debugFlag {
 			fmt.Println(transformSettings, transformXML)
