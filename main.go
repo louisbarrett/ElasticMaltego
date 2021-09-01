@@ -278,7 +278,7 @@ func runESQuery(query string, index string, maltegoEntitys []queryTransform) {
 		Now = Now.AddDate(0, 0, 7*(Weeks*-1))
 		YearInt, WeekInt := Now.ISOWeek()
 		Year := strconv.Itoa(YearInt)
-		WeekToRotate := fmt.Sprintf("%02d", WeekInt)
+		WeekToRotate := fmt.Sprintf("%02d", WeekInt+1)
 
 		// Query Client creation
 		QueryIndex := index + "-" + Year + "-" + "w" + WeekToRotate
