@@ -392,7 +392,8 @@ func main() {
 		for _, transformMap := range userTransforms {
 			maltegoTransforms = append(maltegoTransforms, queryTransform{field: (strings.Split(transformMap, ":")[0]), maltegoType: (strings.Split(transformMap, ":")[1])})
 		}
-		runESQuery(string(*queryFieldFlag)+"\""+string(*queryFlag)+"\"", *indexFlag, maltegoTransforms)
+		formattedQuery := fmt.Sprintf(`%s:"%s"`, string(*queryFieldFlag), string(*queryFlag))
+		runESQuery(formattedQuery, *indexFlag, maltegoTransforms)
 		// If no valid flags are set show the usage doc
 	} else {
 		flag.Usage()
